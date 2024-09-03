@@ -1,0 +1,39 @@
+plugins {
+    id 'base'
+}
+
+defaultTasks 'build'
+buildDir = layout.projectDir.dir('out')
+
+// Load properties
+def sourceDirs = project.findProperty('sourceDirs')?.split(',') ?: []
+def sourceFiles = project.findProperty('sourceFiles')?.split(',') ?: []
+def excludePatterns = project.findProperty('excludePatterns')?.split(',') ?: []
+
+// Task to create a ZIP file from the unpacked files
+tasks.register('zipPack', Zip) {
+    includeEmptyDirs = false
+    group = 'Build'
+    description = "Builds the resource pack."
+    destinationDirectory.set(buildDir)
+    archiveAppendix.set(project.findProperty('mcVersion') ? 'MC' + project.findProperty('mcVersion') : '')
+
+    // Add files to the ZIP
+    sourceDirs.each { dir ->
+        from(dir.trim()) {
+            into dir.trim()
+        }
+    }
+    sourceFiles.each { file ->
+        from(file.trim())
+    }
+
+    // Exclude unnecessary files
+    excludePatterns.each { pattern ->
+        exclude pattern.trim()
+    }
+}
+
+tasks.named('assemble') {
+    dependsOn(tasks.named('zipPack'))
+}
